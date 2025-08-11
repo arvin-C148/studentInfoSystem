@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% block title %}Student Dashboard | Student Info System{% endblock %}
+{% block content %}
+<div class="main-container">
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-graduation-cap"></i>
+                Student Info System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if session['username'] %}
+                    <li class="nav-item">
+                        <span class="nav-link">
+                            <i class="fas fa-user me-2"></i>
+                            {{ session['username'] | title }}
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt me-2"></i>
+                            Logout
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container-fluid py-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="page-header">
+            <h1><i class="fas fa-user-graduate me-3"></i>Student Dashboard</h1>
+            <p>Welcome back, <strong>{{ student.name }}</strong>! View your academic information and mark attendance.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-user me-2"></i>Student Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
+                                <i class="fas fa-id-card text-primary"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Student ID</h6>
+                                <p class="mb-0 fw-bold">{{ student.id }}</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-success bg-opacity-10 rounded-circle p-3 me-3">
+                                <i class="fas fa-user text-success"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Full Name</h6>
+                                <p class="mb-0 fw-bold">{{ student.name }}</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                                <i class="fas fa-graduation-cap text-warning"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Class & Section</h6>
+                                <p class="mb-0 fw-bold">{{ student.class }}-{{ student.section }}</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-info bg-opacity-10 rounded-circle p-3 me-3">
+                                <i class="fas fa-birthday-cake text-info"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Age</h6>
+                                <p class="mb-0 fw-bold">{{ student.age }} years</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Marks & Grades</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if student.marks %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th><i class="fas fa-book me-2"></i>Subject</th>
+                                            <th><i class="fas fa-star me-2"></i>Marks</th>
+                                            <th><i class="fas fa-trophy me-2"></i>Grade</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for subject, mark in student.marks.items() %}
+                                        <tr>
+                                            <td><strong>{{ subject }}</strong></td>
+                                            <td>
+                                                <span class="badge bg-primary">{{ mark }}/100</span>
+                                            </td>
+                                            <td>
+                                                {% if student.grades and subject in student.grades %}
+                                                    <span class="badge bg-success">{{ student.grades[subject] }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Pending</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-clipboard-list text-muted" style="font-size: 3rem;"></i>
+                                <p class="text-muted mt-3">No marks or grades available yet.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-calendar-check me-2"></i>Attendance</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="{{ url_for('mark_attendance') }}" class="mb-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-camera me-2"></i>Mark Attendance (Face Recognition)
+                            </button>
+                        </form>
+                        
+                        {% if student.attendance %}
+                            <h6 class="mb-3">Attendance History</h6>
+                            <div class="row g-2">
+                                {% for day in student.attendance %}
+                                    <div class="col-auto">
+                                        <span class="badge bg-success">{{ day }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-3">
+                                <i class="fas fa-calendar-times text-muted" style="font-size: 2rem;"></i>
+                                <p class="text-muted mt-2 mb-0">No attendance records yet.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-star me-2"></i>Grade Structure</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <div class="d-flex justify-content-between align-items-center p-2 bg-success bg-opacity-10 rounded">
+                                    <span class="fw-bold text-success">A</span>
+                                    <small class="text-muted">90+</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex justify-content-between align-items-center p-2 bg-primary bg-opacity-10 rounded">
+                                    <span class="fw-bold text-primary">B</span>
+                                    <small class="text-muted">80-89</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex justify-content-between align-items-center p-2 bg-warning bg-opacity-10 rounded">
+                                    <span class="fw-bold text-warning">C</span>
+                                    <small class="text-muted">70-79</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex justify-content-between align-items-center p-2 bg-danger bg-opacity-10 rounded">
+                                    <span class="fw-bold text-danger">D</span>
+                                    <small class="text-muted">60-69</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex justify-content-between align-items-center p-2 bg-secondary bg-opacity-10 rounded">
+                                    <span class="fw-bold text-secondary">E</span>
+                                    <small class="text-muted">40-59</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex justify-content-between align-items-center p-2 bg-dark bg-opacity-10 rounded">
+                                    <span class="fw-bold text-dark">F</span>
+                                    <small class="text-muted">&lt;40</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

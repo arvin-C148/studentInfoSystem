@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% block title %}Teacher Dashboard | Student Info System{% endblock %}
+{% block content %}
+<div class="main-container">
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-graduation-cap"></i>
+                Student Info System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if session['username'] %}
+                    <li class="nav-item">
+                        <span class="nav-link">
+                            <i class="fas fa-user me-2"></i>
+                            {{ session['username'] | title }}
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt me-2"></i>
+                            Logout
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container-fluid py-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="page-header">
+            <h1><i class="fas fa-chalkboard-teacher me-3"></i>Teacher Dashboard</h1>
+            <p>Welcome back, <strong>{{ username|title }}</strong>! Manage your students, grades, and attendance efficiently.</p>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card">
+                    <i class="fas fa-users mb-3" style="font-size: 2rem; opacity: 0.8;"></i>
+                    <h3>{{ students|length }}</h3>
+                    <p>Total Students</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card" style="background: linear-gradient(135deg, var(--success-color) 0%, #047857 100%);">
+                    <i class="fas fa-graduation-cap mb-3" style="font-size: 2rem; opacity: 0.8;"></i>
+                    <h3>{{ students|selectattr('class')|list|length }}</h3>
+                    <p>Active Classes</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card" style="background: linear-gradient(135deg, var(--warning-color) 0%, #b45309 100%);">
+                    <i class="fas fa-camera mb-3" style="font-size: 2rem; opacity: 0.8;"></i>
+                    <h3>{{ students|selectattr('face_data')|list|length }}</h3>
+                    <p>Faces Stored</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card" style="background: linear-gradient(135deg, var(--secondary-color) 0%, #475569 100%);">
+                    <i class="fas fa-chart-line mb-3" style="font-size: 2rem; opacity: 0.8;"></i>
+                    <h3>{{ students|map(attribute='attendance')|map('length')|sum }}</h3>
+                    <p>Attendance Records</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-tools me-2"></i>Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <a href="{{ url_for('list_students') }}" class="feature-card d-block">
+                                    <i class="fas fa-users"></i>
+                                    <h6>Student Management</h6>
+                                    <p class="text-muted mb-0">Add, edit, and manage student records</p>
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{{ url_for('select_class_section') }}" class="feature-card d-block">
+                                    <i class="fas fa-edit"></i>
+                                    <h6>Enter Marks & Grades</h6>
+                                    <p class="text-muted mb-0">Record student performance and grades</p>
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{{ url_for('manage_student_faces') }}" class="feature-card d-block">
+                                    <i class="fas fa-camera"></i>
+                                    <h6>Manage Student Faces</h6>
+                                    <p class="text-muted mb-0">View and manage face recognition data</p>
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{{ url_for('reports_dashboard') }}" class="feature-card d-block">
+                                    <i class="fas fa-chart-bar"></i>
+                                    <h6>Analytics & Reports</h6>
+                                    <p class="text-muted mb-0">Generate performance reports</p>
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{{ url_for('ai_academic_stats') }}" class="feature-card d-block">
+                                    <i class="fas fa-brain"></i>
+                                    <h6>AI Academic Analytics</h6>
+                                    <p class="text-muted mb-0">AI-powered student insights</p>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-star me-2"></i>Grade Structure</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between align-items-center p-2 bg-success bg-opacity-10 rounded">
+                                    <span class="fw-bold text-success">A</span>
+                                    <small class="text-muted">90+</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between align-items-center p-2 bg-primary bg-opacity-10 rounded">
+                                    <span class="fw-bold text-primary">B</span>
+                                    <small class="text-muted">80-89</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between align-items-center p-2 bg-warning bg-opacity-10 rounded">
+                                    <span class="fw-bold text-warning">C</span>
+                                    <small class="text-muted">70-79</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between align-items-center p-2 bg-danger bg-opacity-10 rounded">
+                                    <span class="fw-bold text-danger">D</span>
+                                    <small class="text-muted">60-69</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Recent Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                <i class="fas fa-user-plus text-primary"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">New Student Added</h6>
+                                <small class="text-muted">John Doe - Class 10A</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                                <i class="fas fa-check text-success"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Attendance Marked</h6>
+                                <small class="text-muted">25 students present today</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-warning bg-opacity-10 rounded-circle p-2 me-3">
+                                <i class="fas fa-edit text-warning"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Grades Updated</h6>
+                                <small class="text-muted">Mathematics - Class 9B</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Notifications</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info alert-sm mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Reminder:</strong> Submit monthly attendance report by Friday
+                        </div>
+                        <div class="alert alert-warning alert-sm mb-3">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Action Required:</strong> Review pending grade submissions
+                        </div>
+                        <div class="alert alert-success alert-sm">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Success:</strong> Face recognition system updated successfully
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

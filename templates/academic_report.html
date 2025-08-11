@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+{% block title %}Academic Report | Student Info System{% endblock %}
+{% block content %}
+<div class="main-container">
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-graduation-cap"></i>
+                Student Info System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if session['username'] %}
+                    <li class="nav-item">
+                        <span class="nav-link">
+                            <i class="fas fa-user me-2"></i>
+                            {{ session['username'] | title }}
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt me-2"></i>
+                            Logout
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container-fluid py-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="page-header">
+            <h1><i class="fas fa-chart-line me-3"></i>Academic Report</h1>
+            <p>Comprehensive academic analysis including marks, grades, and performance statistics.</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filters</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="class" class="form-label">Class</label>
+                        <select class="form-select" id="class" name="class">
+                            <option value="">All Classes</option>
+                            {% for class_name in classes %}
+                                <option value="{{ class_name }}" {% if selected_class == class_name %}selected{% endif %}>{{ class_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="section" class="form-label">Section</label>
+                        <select class="form-select" id="section" name="section">
+                            <option value="">All Sections</option>
+                            {% for section_name in sections %}
+                                <option value="{{ section_name }}" {% if selected_section == section_name %}selected{% endif %}>{{ section_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-search me-2"></i>Apply Filters
+                        </button>
+                        <a href="{{ url_for('academic_report') }}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Clear
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card">
+                    <i class="fas fa-users mb-3" style="font-size: 2rem; opacity: 0.8;"></i>
+                    <h3>{{ academic_data|length }}</h3>
+                    <p>Total Students</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card" style="background: linear-gradient(135deg, var(--success-color) 0%, #047857 100%);">
+                    <i class="fas fa-star mb-3" style="font-size: 2rem; opacity: 0.8;"></i>
+                    <h3>{{ "%.1f"|format(academic_data|map(attribute='avg_marks')|sum / academic_data|length if academic_data else 0) }}</h3>
+                    <p>Average Marks</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card" style="background: linear-gradient(135deg, var(--warning-color) 0%, #b45309 100%);">
+                    <i class="fas fa-book mb-3" style="font-size: 2rem; opacity: 0.8;"></i>
+                    <h3>{{ academic_data|map(attribute='total_subjects')|sum }}</h3>
+                    <p>Total Subjects</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card" style="background: linear-gradient(135deg, var(--secondary-color) 0%, #475569 100%);">
+                    <i class="fas fa-trophy mb-3" style="font-size: 2rem; opacity: 0.8;"></i>
+                    <h3>{{ academic_data|map(attribute='grade_count')|sum }}</h3>
+                    <p>Total Grades</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Academic Performance Table -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-table me-2"></i>Academic Performance</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-primary">
+                            <tr>
+                                <th><i class="fas fa-id-card me-2"></i>ID</th>
+                                <th><i class="fas fa-user me-2"></i>Name</th>
+                                <th><i class="fas fa-graduation-cap me-2"></i>Class</th>
+                                <th><i class="fas fa-layer-group me-2"></i>Section</th>
+                                <th><i class="fas fa-star me-2"></i>Average Marks</th>
+                                <th><i class="fas fa-book me-2"></i>Subjects</th>
+                                <th><i class="fas fa-trophy me-2"></i>Grades</th>
+                                <th><i class="fas fa-chart-line me-2"></i>Performance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for data in academic_data %}
+                            <tr>
+                                <td><strong>{{ data.student.id }}</strong></td>
+                                <td>{{ data.student.name }}</td>
+                                <td><span class="badge bg-primary">{{ data.student.class }}</span></td>
+                                <td><span class="badge bg-info">{{ data.student.section }}</span></td>
+                                <td>
+                                    {% if data.avg_marks >= 90 %}
+                                        <span class="badge bg-success">{{ data.avg_marks }}/100</span>
+                                    {% elif data.avg_marks >= 80 %}
+                                        <span class="badge bg-primary">{{ data.avg_marks }}/100</span>
+                                    {% elif data.avg_marks >= 70 %}
+                                        <span class="badge bg-warning">{{ data.avg_marks }}/100</span>
+                                    {% elif data.avg_marks >= 60 %}
+                                        <span class="badge bg-info">{{ data.avg_marks }}/100</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">{{ data.avg_marks }}/100</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if data.has_marks %}
+                                        <span class="badge bg-success">{{ data.total_subjects }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">0</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if data.has_grades %}
+                                        <span class="badge bg-success">{{ data.grade_count }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">0</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if data.avg_marks >= 90 %}
+                                        <span class="badge bg-success">Excellent</span>
+                                    {% elif data.avg_marks >= 80 %}
+                                        <span class="badge bg-primary">Very Good</span>
+                                    {% elif data.avg_marks >= 70 %}
+                                        <span class="badge bg-warning">Good</span>
+                                    {% elif data.avg_marks >= 60 %}
+                                        <span class="badge bg-info">Average</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Needs Improvement</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Distribution -->
+        <div class="row g-4 mt-4">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Performance Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between align-items-center p-3 bg-success bg-opacity-10 rounded">
+                                    <div>
+                                        <h6 class="mb-1">Excellent (90%+)</h6>
+                                        <small class="text-muted">{{ academic_data|selectattr('avg_marks', '>=', 90)|list|length }} students</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <h4 class="mb-0 text-success">{{ "%.1f"|format((academic_data|selectattr('avg_marks', '>=', 90)|list|length / academic_data|length) * 100 if academic_data else 0) }}%</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between align-items-center p-3 bg-primary bg-opacity-10 rounded">
+                                    <div>
+                                        <h6 class="mb-1">Very Good (80-89%)</h6>
+                                        <small class="text-muted">{{ academic_data|selectattr('avg_marks', '>=', 80)|selectattr('avg_marks', '<', 90)|list|length }} students</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <h4 class="mb-0 text-primary">{{ "%.1f"|format((academic_data|selectattr('avg_marks', '>=', 80)|selectattr('avg_marks', '<', 90)|list|length / academic_data|length) * 100 if academic_data else 0) }}%</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between align-items-center p-3 bg-warning bg-opacity-10 rounded">
+                                    <div>
+                                        <h6 class="mb-1">Good (70-79%)</h6>
+                                        <small class="text-muted">{{ academic_data|selectattr('avg_marks', '>=', 70)|selectattr('avg_marks', '<', 80)|list|length }} students</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <h4 class="mb-0 text-warning">{{ "%.1f"|format((academic_data|selectattr('avg_marks', '>=', 70)|selectattr('avg_marks', '<', 80)|list|length / academic_data|length) * 100 if academic_data else 0) }}%</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between align-items-center p-3 bg-info bg-opacity-10 rounded">
+                                    <div>
+                                        <h6 class="mb-1">Average (60-69%)</h6>
+                                        <small class="text-muted">{{ academic_data|selectattr('avg_marks', '>=', 60)|selectattr('avg_marks', '<', 70)|list|length }} students</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <h4 class="mb-0 text-info">{{ "%.1f"|format((academic_data|selectattr('avg_marks', '>=', 60)|selectattr('avg_marks', '<', 70)|list|length / academic_data|length) * 100 if academic_data else 0) }}%</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between align-items-center p-3 bg-danger bg-opacity-10 rounded">
+                                    <div>
+                                        <h6 class="mb-1">Needs Improvement (<60%)</h6>
+                                        <small class="text-muted">{{ academic_data|selectattr('avg_marks', '<', 60)|list|length }} students</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <h4 class="mb-0 text-danger">{{ "%.1f"|format((academic_data|selectattr('avg_marks', '<', 60)|list|length / academic_data|length) * 100 if academic_data else 0) }}%</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between align-items-center p-3 bg-secondary bg-opacity-10 rounded">
+                                    <div>
+                                        <h6 class="mb-1">No Data</h6>
+                                        <small class="text-muted">{{ academic_data|selectattr('has_marks', 'equalto', false)|list|length }} students</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <h4 class="mb-0 text-secondary">{{ "%.1f"|format((academic_data|selectattr('has_marks', 'equalto', false)|list|length / academic_data|length) * 100 if academic_data else 0) }}%</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Academic Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> Performance is calculated based on average marks across all subjects.
+                        </div>
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Data Coverage:</strong> {{ academic_data|selectattr('has_marks')|list|length }} students have marks recorded.
+                        </div>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Action Required:</strong> {{ academic_data|selectattr('avg_marks', '<', 60)|list|length }} students need academic improvement.
+                        </div>
+                        <div class="alert alert-primary">
+                            <i class="fas fa-star me-2"></i>
+                            <strong>Top Performers:</strong> {{ academic_data|selectattr('avg_marks', '>=', 90)|list|length }} students with excellent performance.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

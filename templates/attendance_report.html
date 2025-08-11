@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+{% block title %}Attendance Report | Student Info System{% endblock %}
+{% block content %}
+<div class="main-container">
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-graduation-cap"></i>
+                Student Info System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if session['username'] %}
+                    <li class="nav-item">
+                        <span class="nav-link">
+                            <i class="fas fa-user me-2"></i>
+                            {{ session['username'] | title }}
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt me-2"></i>
+                            Logout
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container-fluid py-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="page-header">
+            <h1><i class="fas fa-calendar-check me-3"></i>Attendance Report</h1>
+            <p>Comprehensive attendance analysis and statistics for all students.</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filters</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="class" class="form-label">Class</label>
+                        <select class="form-select" id="class" name="class">
+                            <option value="">All Classes</option>
+                            {% for class_name in classes %}
+                                <option value="{{ class_name }}" {% if selected_class == class_name %}selected{% endif %}>{{ class_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="section" class="form-label">Section</label>
+                        <select class="form-select" id="section" name="section">
+                            <option value="">All Sections</option>
+                            {% for section_name in sections %}
+                                <option value="{{ section_name }}" {% if selected_section == section_name %}selected{% endif %}>{{ section_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-search me-2"></i>Apply Filters
+                        </button>
+                        <a href="{{ url_for('attendance_report') }}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Clear
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card">
+                    <i class="fas fa-users mb-3" style="font-size: 2rem; opacity: 0.8;"></i>
+                    <h3>{{ attendance_data|length }}</h3>
+                    <p>Total Students</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card" style="background: linear-gradient(135deg, var(--success-color) 0%, #047857 100%);">
+                    <i class="fas fa-calendar-check mb-3" style="font-size: 2rem; opacity: 0.8;"></i>
+                    <h3>{{ attendance_data|map(attribute='attendance_days')|sum }}</h3>
+                    <p>Total Attendance Days</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card" style="background: linear-gradient(135deg, var(--warning-color) 0%, #b45309 100%);">
+                    <i class="fas fa-percentage mb-3" style="font-size: 2rem; opacity: 0.8;"></i>
+                    <h3>{{ "%.1f"|format(attendance_data|map(attribute='attendance_percentage')|sum / attendance_data|length if attendance_data else 0) }}%</h3>
+                    <p>Average Attendance</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card" style="background: linear-gradient(135deg, var(--secondary-color) 0%, #475569 100%);">
+                    <i class="fas fa-camera mb-3" style="font-size: 2rem; opacity: 0.8;"></i>
+                    <h3>{{ attendance_data|selectattr('has_face_data')|list|length }}</h3>
+                    <p>Face Data Available</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Table -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-table me-2"></i>Attendance Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-primary">
+                            <tr>
+                                <th><i class="fas fa-id-card me-2"></i>ID</th>
+                                <th><i class="fas fa-user me-2"></i>Name</th>
+                                <th><i class="fas fa-graduation-cap me-2"></i>Class</th>
+                                <th><i class="fas fa-layer-group me-2"></i>Section</th>
+                                <th><i class="fas fa-calendar-check me-2"></i>Attendance Days</th>
+                                <th><i class="fas fa-percentage me-2"></i>Attendance %</th>
+                                <th><i class="fas fa-camera me-2"></i>Face Data</th>
+                                <th><i class="fas fa-chart-line me-2"></i>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for data in attendance_data %}
+                            <tr>
+                                <td><strong>{{ data.student.id }}</strong></td>
+                                <td>{{ data.student.name }}</td>
+                                <td><span class="badge bg-primary">{{ data.student.class }}</span></td>
+                                <td><span class="badge bg-info">{{ data.student.section }}</span></td>
+                                <td>
+                                    <span class="badge bg-success">{{ data.attendance_days }}</span>
+                                </td>
+                                <td>
+                                    {% if data.attendance_percentage >= 90 %}
+                                        <span class="badge bg-success">{{ data.attendance_percentage }}%</span>
+                                    {% elif data.attendance_percentage >= 75 %}
+                                        <span class="badge bg-warning">{{ data.attendance_percentage }}%</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">{{ data.attendance_percentage }}%</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if data.has_face_data %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check me-1"></i>Available
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-times me-1"></i>Not Available
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if data.attendance_percentage >= 90 %}
+                                        <span class="badge bg-success">Excellent</span>
+                                    {% elif data.attendance_percentage >= 75 %}
+                                        <span class="badge bg-warning">Good</span>
+                                    {% elif data.attendance_percentage >= 60 %}
+                                        <span class="badge bg-info">Average</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Poor</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Distribution -->
+        <div class="row g-4 mt-4">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Attendance Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between align-items-center p-3 bg-success bg-opacity-10 rounded">
+                                    <div>
+                                        <h6 class="mb-1">Excellent (90%+)</h6>
+                                        <small class="text-muted">{{ attendance_data|selectattr('attendance_percentage', '>=', 90)|list|length }} students</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <h4 class="mb-0 text-success">{{ "%.1f"|format((attendance_data|selectattr('attendance_percentage', '>=', 90)|list|length / attendance_data|length) * 100 if attendance_data else 0) }}%</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between align-items-center p-3 bg-warning bg-opacity-10 rounded">
+                                    <div>
+                                        <h6 class="mb-1">Good (75-89%)</h6>
+                                        <small class="text-muted">{{ attendance_data|selectattr('attendance_percentage', '>=', 75)|selectattr('attendance_percentage', '<', 90)|list|length }} students</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <h4 class="mb-0 text-warning">{{ "%.1f"|format((attendance_data|selectattr('attendance_percentage', '>=', 75)|selectattr('attendance_percentage', '<', 90)|list|length / attendance_data|length) * 100 if attendance_data else 0) }}%</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between align-items-center p-3 bg-info bg-opacity-10 rounded">
+                                    <div>
+                                        <h6 class="mb-1">Average (60-74%)</h6>
+                                        <small class="text-muted">{{ attendance_data|selectattr('attendance_percentage', '>=', 60)|selectattr('attendance_percentage', '<', 75)|list|length }} students</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <h4 class="mb-0 text-info">{{ "%.1f"|format((attendance_data|selectattr('attendance_percentage', '>=', 60)|selectattr('attendance_percentage', '<', 75)|list|length / attendance_data|length) * 100 if attendance_data else 0) }}%</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between align-items-center p-3 bg-danger bg-opacity-10 rounded">
+                                    <div>
+                                        <h6 class="mb-1">Poor (<60%)</h6>
+                                        <small class="text-muted">{{ attendance_data|selectattr('attendance_percentage', '<', 60)|list|length }} students</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <h4 class="mb-0 text-danger">{{ "%.1f"|format((attendance_data|selectattr('attendance_percentage', '<', 60)|list|length / attendance_data|length) * 100 if attendance_data else 0) }}%</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Report Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> Attendance percentage is calculated based on 30 school days per month.
+                        </div>
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Face Recognition:</strong> {{ attendance_data|selectattr('has_face_data')|list|length }} students have face data for attendance tracking.
+                        </div>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Action Required:</strong> {{ attendance_data|selectattr('attendance_percentage', '<', 75)|list|length }} students have attendance below 75%.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

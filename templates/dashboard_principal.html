@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% block title %}Principal Dashboard | Student Info System{% endblock %}
+{% block content %}
+<div class="main-container">
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-graduation-cap"></i>
+                Student Info System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if session['username'] %}
+                    <li class="nav-item">
+                        <span class="nav-link">
+                            <i class="fas fa-user me-2"></i>
+                            {{ session['username'] | title }}
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt me-2"></i>
+                            Logout
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container-fluid py-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="page-header">
+            <h1><i class="fas fa-user-tie me-3"></i>Principal Dashboard</h1>
+            <p>Welcome back, <strong>{{ username|title }}</strong>! Manage your school's students, teachers, and overall operations.</p>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card">
+                    <i class="fas fa-users mb-3" style="font-size: 2rem; opacity: 0.8;"></i>
+                    <h3>{{ students|length if students else 0 }}</h3>
+                    <p>Total Students</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card" style="background: linear-gradient(135deg, var(--success-color) 0%, #047857 100%);">
+                    <i class="fas fa-chalkboard-teacher mb-3" style="font-size: 2rem; opacity: 0.8;"></i>
+                    <h3>{{ teachers|length if teachers else 0 }}</h3>
+                    <p>Total Teachers</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card" style="background: linear-gradient(135deg, var(--warning-color) 0%, #b45309 100%);">
+                    <i class="fas fa-graduation-cap mb-3" style="font-size: 2rem; opacity: 0.8;"></i>
+                    <h3>{{ students|map(attribute='class')|unique|list|length if students else 0 }}</h3>
+                    <p>Active Classes</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card" style="background: linear-gradient(135deg, var(--secondary-color) 0%, #475569 100%);">
+                    <i class="fas fa-chart-line mb-3" style="font-size: 2rem; opacity: 0.8;"></i>
+                    <h3>{{ students|map(attribute='attendance')|map('length')|sum if students else 0 }}</h3>
+                    <p>Attendance Records</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-tools me-2"></i>Management Features</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <a href="{{ url_for('list_students') }}" class="feature-card d-block">
+                                    <i class="fas fa-users"></i>
+                                    <h6>Student Management</h6>
+                                    <p class="text-muted mb-0">Add, edit, and manage student records</p>
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{{ url_for('list_teachers') }}" class="feature-card d-block">
+                                    <i class="fas fa-chalkboard-teacher"></i>
+                                    <h6>Teacher Management</h6>
+                                    <p class="text-muted mb-0">Manage teacher accounts and assignments</p>
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{{ url_for('reports_dashboard') }}" class="feature-card d-block">
+                                    <i class="fas fa-chart-bar"></i>
+                                    <h6>Analytics & Reports</h6>
+                                    <p class="text-muted mb-0">Generate comprehensive school reports</p>
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="#" class="feature-card d-block">
+                                    <i class="fas fa-cog"></i>
+                                    <h6>System Settings</h6>
+                                    <p class="text-muted mb-0">Configure school-wide settings</p>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-star me-2"></i>Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('list_students') }}" class="btn btn-primary">
+                                <i class="fas fa-users me-2"></i>Manage Students
+                            </a>
+                            <a href="{{ url_for('list_teachers') }}" class="btn btn-success">
+                                <i class="fas fa-chalkboard-teacher me-2"></i>Manage Teachers
+                            </a>
+                            <a href="{{ url_for('reports_dashboard') }}" class="btn btn-info">
+                                <i class="fas fa-chart-bar me-2"></i>View Reports
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Recent Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                <i class="fas fa-user-plus text-primary"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">New Student Added</h6>
+                                <small class="text-muted">John Doe - Class 10A</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                                <i class="fas fa-chalkboard-teacher text-success"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">New Teacher Registered</h6>
+                                <small class="text-muted">Ms. Johnson - Science</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-warning bg-opacity-10 rounded-circle p-2 me-3">
+                                <i class="fas fa-chart-line text-warning"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Monthly Report Generated</h6>
+                                <small class="text-muted">Attendance and performance summary</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Notifications</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info alert-sm mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Reminder:</strong> Review monthly attendance reports
+                        </div>
+                        <div class="alert alert-warning alert-sm mb-3">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Action Required:</strong> Approve pending teacher registrations
+                        </div>
+                        <div class="alert alert-success alert-sm">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Success:</strong> System backup completed successfully
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

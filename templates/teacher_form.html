@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}{{ action }} Teacher | Student Info System{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-end mb-3">
+  <a href="{{ url_for('dashboard_principal') }}" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow-sm mt-4">
+      <div class="card-body">
+        <h3 class="card-title mb-4">{{ action }} Teacher</h3>
+        <form method="post">
+          <div class="mb-3">
+            <label for="name" class="form-label">Name</label>
+            <input type="text" class="form-control" id="name" name="name" required value="{{ teacher.name if teacher else '' }}">
+          </div>
+          <div class="mb-3">
+            <label for="subject" class="form-label">Subject</label>
+            <input type="text" class="form-control" id="subject" name="subject" required value="{{ teacher.subject if teacher else '' }}">
+          </div>
+          <button type="submit" class="btn btn-primary">{{ action }}</button>
+          <a href="{{ url_for('list_teachers') }}" class="btn btn-secondary ms-2">Cancel</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

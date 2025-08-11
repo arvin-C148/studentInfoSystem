@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block title %}Mark Attendance | Student Info System{% endblock %}
+{% block content %}
+<h2>Mark Attendance</h2>
+<p>Today: <strong>{{ today }}</strong></p>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <h5 class="card-title">Face Recognition Status</h5>
+    <div id="faceStatus" class="alert alert-info">Initializing camera...</div>
+    <div id="faceContainer">
+      <div class="mb-3">
+        <div id="cameraContainer" style="position: relative;">
+          <video id="webcam" width="400" height="300" autoplay muted playsinline style="background:#eee; border: 1px solid #ccc;"></video>
+          <canvas id="canvas" width="400" height="300" style="display:none; border: 1px solid #ccc;"></canvas>
+          <div id="faceOverlay" style="position: absolute; top: 0; left: 0; width: 400px; height: 300px; pointer-events: none;"></div>
+        </div>
+        <div class="mt-2">
+          <small class="text-muted">Position your face in the camera view. Make sure your face is clearly visible.</small>
+        </div>
+      </div>
+      <div class="mt-3">
+        <button type="button" id="captureBtn" class="btn btn-primary" disabled>📸 Capture Face</button>
+        <button type="button" id="retakeBtn" class="btn btn-secondary" style="display:none;">🔄 Retake Photo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<form method="post" id="attendanceForm">
+  <input type="hidden" name="face_data" id="faceData">
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title">Attendance Submission</h5>
+      <div id="captureStatus" class="alert alert-warning">Please capture your face first</div>
+      <button type="submit" id="submitBtn" class="btn btn-success" disabled>✅ Mark Attendance</button>
+      <a href="{{ url_for('dashboard_student') }}" class="btn btn-secondary ms-2">❌ Cancel</a>
+    </div>
+  </div>
+</form>
+
+<script>
+let stream = null;
+let capturedImage = null;
+
+// Update status display
+function updateStatus(message, type = 'info') {
+    const statusDiv = document.getElementById('faceStatus');
+    statusDiv.textContent = message;
+    statusDiv.className = `alert alert-${type}`;
+    console.log('Status:', message);
+}
+
+// Update capture status
+function updateCaptureStatus(message, type = 'warning') {
+    const statusDiv = document.getElementById('captureStatus');
+    statusDiv.textContent = message;
+    statusDiv.className = `alert alert-${type}`;
+}
+
+// Initialize camera
+async function initializeCamera() {
+    try {
+        updateStatus('Requesting camera access...', 'info');
+        
+        // Check if getUserMedia is supported
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error('getUserMedia is not supported in this browser');
+        }
+        
+        // Request camera access
+        stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                width: { ideal: 400 },
+                height: { ideal: 300 },
+                facingMode: 'user'
+            } 
+        });
+        
+        const video = document.getElementById('webcam');
+        video.srcObject = stream;
+        
+        // Wait for video to be ready
+        video.addEventListener('loadedmetadata', function() {
+            updateStatus('✅ Camera ready! Position your face and click "Capture Face".', 'success');
+            document.getElementById('captureBtn').disabled = false;
+            console.log('Camera initialized successfully');
+        });
+        
+        video.addEventListener('error', function(e) {
+            console.error('Video error:', e);
+            updateStatus('❌ Error loading video stream', 'danger');
+        });
+        
+    } catch (err) {
+        console.error('Error accessing camera:', err);
+        updateStatus(`❌ Camera error: ${err.message}`, 'danger');
+        alert(`Camera error: ${err.message}\n\nPlease ensure:\n1. Camera permissions are granted\n2. No other app is using the camera\n3. Camera is not disabled\n4. You're using a modern browser (Chrome, Firefox, Edge)`);
+    }
+}
+
+// Capture face image
+function captureFace() {
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+    
+    try {
+        console.log('Attempting to capture face...');
+        console.log('Video readyState:', video.readyState);
+        console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+        
+        // Check if video is ready
+        if (video.readyState < 2) {
+            updateStatus('⏳ Video not ready yet. Please wait...', 'warning');
+            return;
+        }
+        
+        if (video.videoWidth === 0 || video.videoHeight === 0) {
+            updateStatus('❌ Video stream not available', 'danger');
+            return;
+        }
+        
+        // Draw the current video frame to canvas
+        context.drawImage(video, 0, 0, 400, 300);
+        
+        // Convert canvas to base64
+        capturedImage = canvas.toDataURL('image/jpeg', 0.8);
+        document.getElementById('faceData').value = capturedImage;
+        
+        console.log('Face image captured successfully!');
+        console.log('Image data length:', capturedImage.length);
+        
+        // Show captured image and retake button
+        video.style.display = 'none';
+        canvas.style.display = 'block';
+        document.getElementById('captureBtn').style.display = 'none';
+        document.getElementById('retakeBtn').style.display = 'inline-block';
+        document.getElementById('submitBtn').disabled = false;
+        
+        updateStatus('📸 Face captured! You can retake or submit.', 'success');
+        updateCaptureStatus('✅ Face image ready for submission', 'success');
+        
+    } catch (err) {
+        console.error('Error capturing face:', err);
+        updateStatus(`❌ Error capturing face: ${err.message}`, 'danger');
+    }
+}
+
+// Retake photo
+function retakePhoto() {
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('canvas');
+    
+    video.style.display = 'block';
+    canvas.style.display = 'none';
+    document.getElementById('captureBtn').style.display = 'inline-block';
+    document.getElementById('retakeBtn').style.display = 'none';
+    document.getElementById('submitBtn').disabled = true;
+    capturedImage = null;
+    document.getElementById('faceData').value = '';
+    
+    updateStatus('📸 Ready to capture new face image', 'info');
+    updateCaptureStatus('Please capture your face first', 'warning');
+}
+
+// Form submission handler
+document.getElementById('attendanceForm').addEventListener('submit', function(e) {
+    const faceData = document.getElementById('faceData').value;
+    console.log('Form submission - face data length:', faceData ? faceData.length : 0);
+    
+    if (!faceData || faceData.length < 100) {
+        e.preventDefault();
+        alert('❌ Please capture your face first!');
+        return false;
+    }
+    
+    console.log('Submitting form with face data length:', faceData.length);
+    updateCaptureStatus('🔄 Submitting attendance...', 'info');
+});
+
+// Event listeners
+document.getElementById('captureBtn').addEventListener('click', captureFace);
+document.getElementById('retakeBtn').addEventListener('click', retakePhoto);
+
+// Initialize camera when page loads
+window.addEventListener('load', initializeCamera);
+
+// Stop camera when leaving page
+window.addEventListener('beforeunload', () => {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+});
+</script>
+{% endblock %} 

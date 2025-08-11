@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Select Class & Section | Student Info System{% endblock %}
+{% block content %}
+<h2>Select Class & Section</h2>
+<form method="post" class="mb-4">
+  <div class="mb-3">
+    <label for="class" class="form-label">Class</label>
+    <select class="form-select" id="class" name="class" required>
+      <option value="">Select Class</option>
+      {% for c in classes %}
+        <option value="{{ c }}">{{ c }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="mb-3">
+    <label for="section" class="form-label">Section</label>
+    <select class="form-select" id="section" name="section" required>
+      <option value="">Select Section</option>
+      {% for s in sections %}
+        <option value="{{ s }}">{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button type="submit" class="btn btn-primary">Proceed</button>
+  <a href="{{ url_for('dashboard_teacher') }}" class="btn btn-secondary ms-2">Cancel</a>
+</form>
+{% endblock %} 
