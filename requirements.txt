@@ -3,4 +3,4 @@ Werkzeug==2.3.7
 opencv-python==4.8.1.78
 supabase==2.0.2
 python-dotenv==1.0.0
-psycopg2-binary==2.9.7 
+psycopg2-binary==2.9.7
